@@ -1,4 +1,4 @@
-/* todo: xrdb histsize, cols, rows, bellvolume */
+/* todo: xrdb histsize */
 
 #define histsize 2000
 

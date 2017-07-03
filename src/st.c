@@ -236,7 +236,7 @@ typedef struct {
 	uint32_t bg;      /* background  */
 } Glyph;
 
-typedef Glyph *Line;
+typedef Glyph* Line;
 
 typedef struct {
 	Glyph attr; /* current char attributes */
@@ -4801,6 +4801,9 @@ xrdb_load(void)
 		XRESOURCE_LOAD_INTEGER("cursorthickness", cursorthickness);
 		XRESOURCE_LOAD_INTEGER("cursorblinkstyle", cursorblinkstyle);
 		XRESOURCE_LOAD_INTEGER("cursorblinkontype", cursorblinkontype);
+		XRESOURCE_LOAD_INTEGER("rows", rows);
+		XRESOURCE_LOAD_INTEGER("cols", cols);
+		XRESOURCE_LOAD_INTEGER("bellvolume", bellvolume);
 
 		XRESOURCE_LOAD_FLOAT("cwscale", cwscale);
 		XRESOURCE_LOAD_FLOAT("chscale", chscale);
