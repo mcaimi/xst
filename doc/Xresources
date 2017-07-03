@@ -32,6 +32,9 @@ st.cols:  80
 ! bell volume, 0 disables this feature
 st.bellvolume:  200
 
+! history size
+st.histsize:  1200
+
 ! opacity==255 means what terminal will be not transparent, 0 - fully transparent
 st.opacity:      255
 ! Defaults taken from base16-twilight colorscheme.

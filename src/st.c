@@ -20,6 +20,7 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+#include <strings.h>
 #include <libgen.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
@@ -377,7 +378,7 @@ typedef struct {
 	int col;      /* nb col */
 	Line *line;   /* screen */
 	Line *alt;    /* alternate screen */
-	Line hist[histsize]; /* history buffer */
+	Line *hist;   /* history buffer */
 	int histi;    /* history index */
 	int scr;      /* scroll back */
 	int *dirty;  /* dirtyness of lines */
@@ -3361,7 +3362,7 @@ tresize(int col, int row)
 		free(term.alt[i]);
 	}
 
-	/* resize to new width */
+  /* resize to new width */
 	term.specbuf = xrealloc(term.specbuf, col * sizeof(XftGlyphFontSpec));
 
 	/* resize to new height */
@@ -3370,9 +3371,15 @@ tresize(int col, int row)
 	term.dirty = xrealloc(term.dirty, row * sizeof(*term.dirty));
 	term.tabs = xrealloc(term.tabs, col * sizeof(*term.tabs));
 
-	for (i = 0; i < histsize; i++) {
-		term.hist[i] = xrealloc(term.hist[i], col * sizeof(Glyph));
-		for (j = mincol; j < col; j++) {
+  /* allocate space for dynamic line array */
+  term.hist = (Line*)xrealloc(term.hist, histsize * sizeof(Line));
+  bzero(term.hist, histsize * sizeof(Line));
+
+  for (i = 0; i < histsize; i++) {
+    // allocate space for a single line.
+    term.hist[i] = (Line)xrealloc(term.hist[i], col * sizeof(Glyph));
+    // initialize line contents
+    for (j = mincol; j < col; j++) {
 			term.hist[i][j] = term.c.attr;
 			term.hist[i][j].u = ' ';
 		}
@@ -4804,6 +4811,7 @@ xrdb_load(void)
 		XRESOURCE_LOAD_INTEGER("rows", rows);
 		XRESOURCE_LOAD_INTEGER("cols", cols);
 		XRESOURCE_LOAD_INTEGER("bellvolume", bellvolume);
+		XRESOURCE_LOAD_INTEGER("histsize", histsize);
 
 		XRESOURCE_LOAD_FLOAT("cwscale", cwscale);
 		XRESOURCE_LOAD_FLOAT("chscale", chscale);

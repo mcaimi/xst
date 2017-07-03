@@ -1,6 +1,6 @@
-/* todo: xrdb histsize */
+/* Xst main config file */
 
-#define histsize 2000
+static unsigned int histsize = 2000;
 
 static unsigned int cols = 80;
 static unsigned int rows = 24;
