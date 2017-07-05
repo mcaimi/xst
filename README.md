@@ -1,22 +1,13 @@
-﻿:pill: xst :pill:
+﻿** Xst **
 
-`xst` is an [in progress](https://github.com/neeasade/xst/blob/master/doc/TODO.md) [st](http://st.suckless.org) fork that:
+`xst` is an [in progress] [st](http://st.suckless.org) and [Xst](https://github.com/neeasade/Xst) fork.
 
-- Loads settings from Xresources. See https://git.io/vVisW
-- Live-reloads settings from xrdb on USR1 signal (like termite)
-- Is available as an AUR package `xst-git` (binary and man also still named st)
-- Has cursor blinking options
-- Has the following [st-patches](http://st.suckless.org/patches/) applied:
-    - spoiler
-    - clipboard
-    - externalpipe
-    - boldcolors (only the ability to disable bold fonts)
-    - vertcenter
-    - alpha (transparent background)
+This fork has:
+- ROWS, COLS and BELLVOLUME parameters are now read from Xresources
+- History size has a custom setting in Xresources as well
+- F11 enables Xst to go full-screen
+- Added skiptaskbar and skippager XResources options (does not work on Gnome3 yet)
 
-Thanks to:
+More to come..
 
-- [suckless project](http://suckless.org/)
-- [dcat](https://github.com/dcat)
-- [Forkk](https://github.com/forkk)
-- [niebieskitrociny](https://github.com/niebieskitrociny/)
+

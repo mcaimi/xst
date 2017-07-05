@@ -40,6 +40,11 @@ char *argv0;
 #define Glyph Glyph_
 #define Font Font_
 
+#define _NET_WM_STATE_REMOVE  0
+#define _NET_WM_STATE_ADD     1
+#define _NET_WM_STATE_TOGGLE  2
+#define GET_WINDOW_PROPERTY_SIZE 65535
+
 #if   defined(__linux)
  #include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -199,7 +204,8 @@ enum escape_state {
 
 enum window_state {
 	WIN_VISIBLE = 1,
-	WIN_FOCUSED = 2
+	WIN_FOCUSED = 2,
+  WIN_FULLSCREEN = 3
 };
 
 enum selection_mode {
@@ -274,6 +280,7 @@ typedef struct {
 	Window win;
 	Drawable buf;
 	Atom xembed, wmdeletewin, netwmname, netwmpid;
+  Atom window_fullscreen, window_state, skip_taskbar, skip_pager;
 	XIM xim;
 	XIC xic;
 	Draw draw;
@@ -368,6 +375,7 @@ static void toggleprinter(const Arg *);
 static void sendbreak(const Arg *);
 static void externalpipe(const Arg *);
 static void iso14755(const Arg *);
+static void go_fullscreen(const Arg *);
 
 /* Config.h for applying patches and the configuration. */
 #include "config.h"
@@ -2794,6 +2802,88 @@ iso14755(const Arg *arg)
 }
 
 void
+go_fullscreen(const Arg *arg)
+{
+  int error;
+  unsigned int has_fullscreen_set = 0;
+  Atom actual_type_return, req_property_type = XInternAtom(xw.dpy, "ATOM", False);
+  int actual_format_return;
+  unsigned long nitems_return, bytes_after_return;
+  long long_offset, long_length;
+  unsigned char *data = NULL;
+
+  // query Xlib for current window properties. we need to determine whether the _NET_WM_STATE_FULLSCREEN
+  // atom is already set.
+  // https://tronche.com/gui/x/xlib/window-information/XGetWindowProperty.html
+  long_offset = 0; // retrieve from the beginning of property list
+  long_length = GET_WINDOW_PROPERTY_SIZE;
+  error = XGetWindowProperty(xw.dpy, xw.win,
+                               xw.window_state,
+                               long_offset,
+                               long_length,
+                               FALSE,
+                               req_property_type,
+                               &actual_type_return,
+                               &actual_format_return,
+                               &nitems_return,
+                               &bytes_after_return,
+                               &data);
+
+  if (error != Success) {
+    fprintf(stderr, "%s - %s [%d]\n", "Xst ERROR", "go_fullscreen(): XGetWindowProperty() failed.", error );
+    return;
+  }
+
+  // check if the _NET_WM_STATE_FULLSCREEN property is set:
+  if (data) {
+    for (int i=0; i<nitems_return; i++) {
+      has_fullscreen_set = (xw.window_fullscreen == ((unsigned long*)data)[i]) ? 1 : 0; // property is 32bit cast to unsigned long
+      if (has_fullscreen_set) {
+        break;
+      }
+    }
+    XFree(data);
+  }
+
+  // see https://specifications.freedesktop.org/wm-spec/1.3/ar01s05.html, _NET_WM_STATE paragraph
+  /*
+    window  = the respective client window
+    message_type = _NET_WM_STATE
+    format = 32
+    data.l[0] = the action, as listed below
+    data.l[1] = first property to alter
+    data.l[2] = second property to alter
+    data.l[3] = source indication
+    other data.l[] elements = 0
+
+    _NET_WM_STATE_REMOVE 0
+    _NET_WM_STATE_ADD 1
+    _NET_WM_STATE_TOGGLE 2
+  */
+
+  // See Xlib.h, line 36
+  XEvent xevent;
+  bzero(&xevent, sizeof(xevent));
+  // prepare client message
+  // we are interested in the 'xclient' field of the Xevent union
+  xevent.type = ClientMessage;
+  xevent.xclient.window = xw.win;
+  xevent.xclient.message_type = xw.window_state;
+  xevent.xclient.format = 32;
+  xevent.xclient.data.l[0] = (! has_fullscreen_set) ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
+  xevent.xclient.data.l[1] = xw.window_fullscreen;
+  xevent.xclient.data.l[2] = 0;
+  xevent.xclient.data.l[3] = 0;
+  xevent.xclient.data.l[4] = 0;
+  // Message must be sent to root win, see https://specifications.freedesktop.org/wm-spec/wm-spec-1.3.html#idm140130317705584 
+  // for specific parameters (for XCB). For Xlib, as used in this program, the equivalent Root window flags are named:
+  // X.h:#define SubstructureNotifyMask              (1L<<19)
+  // X.h:#define SubstructureRedirectMask    (1L<<20)
+  // as found by grepping through Xorg's header files
+  XSendEvent(xw.dpy, DefaultRootWindow(xw.dpy), FALSE, SubstructureNotifyMask|SubstructureRedirectMask, &xevent);
+}
+
+void
 toggleprinter(const Arg *arg)
 {
 	term.mode ^= MODE_PRINT;
@@ -3790,6 +3880,52 @@ xzoomreset(const Arg *arg)
 }
 
 void
+skip_taskbar_and_pager(void)
+{
+  /*
+    window  = the respective client window
+    message_type = _NET_WM_STATE
+    format = 32
+    data.l[0] = the action, as listed below
+    data.l[1] = first property to alter
+    data.l[2] = second property to alter
+    data.l[3] = source indication
+    other data.l[] elements = 0
+
+    _NET_WM_STATE_REMOVE 0
+    _NET_WM_STATE_ADD 1
+    _NET_WM_STATE_TOGGLE 2
+  */
+
+  if ((skiptaskbar == FALSE) && (skippager == FALSE))
+    return;
+
+  // should we skip the taskbar?
+  xw.skip_taskbar = XInternAtom(xw.dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
+  xw.skip_pager = XInternAtom(xw.dpy, "_NET_WM_STATE_SKIP_PAGER", False);
+
+  // See Xlib.h, line 36
+  XEvent xevent;
+  bzero(&xevent, sizeof(xevent));
+  // prepare client message
+  // we are interested in the 'xclient' field of the Xevent union
+  xevent.type = ClientMessage;
+  xevent.xclient.window = xw.win;
+  xevent.xclient.message_type = xw.window_state;
+  xevent.xclient.format = 32;
+  xevent.xclient.data.l[0] = _NET_WM_STATE_ADD;
+  xevent.xclient.data.l[1] = (skiptaskbar == TRUE) ? xw.skip_pager : 0;
+  xevent.xclient.data.l[2] = (skippager == TRUE) ? xw.skip_pager : 0;
+  xevent.xclient.data.l[3] = 0;
+  xevent.xclient.data.l[4] = 0;
+  // Send Message to root win, see https://specifications.freedesktop.org/wm-spec/wm-spec-1.3.html#idm140130317705584 for XCB,
+  // for Xlib, as used in this program, the equivalent Root window flags are named:
+  // X.h:#define SubstructureNotifyMask              (1L<<19)
+  // X.h:#define SubstructureRedirectMask    (1L<<20)
+  XSendEvent(xw.dpy, DefaultRootWindow(xw.dpy), False, SubstructureNotifyMask|SubstructureRedirectMask, &xevent);
+}
+
+void
 xinit(void)
 {
 	XGCValues gcvalues;
@@ -3923,13 +4059,20 @@ xinit(void)
 
 	xw.xembed = XInternAtom(xw.dpy, "_XEMBED", False);
 	xw.wmdeletewin = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
-	xw.netwmname = XInternAtom(xw.dpy, "_NET_WM_NAME", False);
+	xw.netwmname = XInternAtom(xw.dpy, "XA_WM_NAME", False);
 	XSetWMProtocols(xw.dpy, xw.win, &xw.wmdeletewin, 1);
 
 	xw.netwmpid = XInternAtom(xw.dpy, "_NET_WM_PID", False);
+
+  // get window properties status
+  xw.window_state = XInternAtom(xw.dpy, "_NET_WM_STATE", False);
+  // get window fullscreen status
+  xw.window_fullscreen = XInternAtom(xw.dpy, "_NET_WM_STATE_FULLSCREEN", False);
+
 	XChangeProperty(xw.dpy, xw.win, xw.netwmpid, XA_CARDINAL, 32,
 			PropModeReplace, (uchar *)&thispid, 1);
 
+  skip_taskbar_and_pager();
 	xresettitle();
 	XMapWindow(xw.dpy, xw.win);
 	xhints();
@@ -4812,6 +4955,8 @@ xrdb_load(void)
 		XRESOURCE_LOAD_INTEGER("cols", cols);
 		XRESOURCE_LOAD_INTEGER("bellvolume", bellvolume);
 		XRESOURCE_LOAD_INTEGER("histsize", histsize);
+    XRESOURCE_LOAD_INTEGER("skiptaskbar", skiptaskbar);
+    XRESOURCE_LOAD_INTEGER("skippager", skiptaskbar);
 
 		XRESOURCE_LOAD_FLOAT("cwscale", cwscale);
 		XRESOURCE_LOAD_FLOAT("chscale", chscale);

@@ -11,6 +11,13 @@ static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true;"
 /* exec precedence: -e arg, utmp option, SHELL env var, /etc/passwd shell */
 static char *shell = "\0";
 
+/* instruct the window manager to skip taskbar fot the current window */
+/* 0 disables the feature */
+static unsigned int skiptaskbar = 0;
+
+/* skip the pager for the current window */
+static unsigned int skippager = 0;
+
 /* set a char which can be printed with esc code \033[z */
 /* TODO: allow this to accept unicode */
 static char prompt_char = '$';
@@ -155,6 +162,7 @@ static Shortcut shortcuts[] = {
 	{ MODKEY,               'u',            externalpipe,   {.v = "xurls | eval dmenu $(dmenu_options) | xargs -r $BROWSER" } },
 	{ ShiftMask,            XK_Page_Up,     kscrollup,      {.i = -1} },
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
+  { XK_NO_MOD,            XK_F11,         go_fullscreen,  {.i =  0} },
 };
 
 
