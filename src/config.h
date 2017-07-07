@@ -1,4 +1,6 @@
-/* Xst main config file */
+/*
+ * Xst main config file
+ * */
 
 static unsigned int histsize = 2000;
 
@@ -54,6 +56,7 @@ static int bellvolume = 100;
  *	stty tabs
  */
 static unsigned int tabspaces = 8;
+
 /* bg opacity */
 static int alpha = 0xff;
 
@@ -164,7 +167,6 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
   { XK_NO_MOD,            XK_F11,         go_fullscreen,  {.i =  0} },
 };
-
 
 /*
  * Special keys (change & recompile st.info accordingly)
