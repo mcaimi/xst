@@ -91,4 +91,3 @@
 		DST = strtof(ret.addr, NULL);
 
 #define ISO14755CMD		"dmenu -w %lu -p codepoint: </dev/null"
-

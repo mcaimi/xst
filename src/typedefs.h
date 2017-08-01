@@ -58,6 +58,7 @@ typedef struct {
 	Drawable buf;
 	Atom xembed, wmdeletewin, netwmname, netwmpid;
   Atom window_fullscreen, window_state, skip_taskbar, skip_pager;
+  Atom taskbar_icon_atom, cardinal_atom;
 	XIM xim;
 	XIC xic;
 	Draw draw;
