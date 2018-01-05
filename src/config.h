@@ -20,6 +20,10 @@ static unsigned int skiptaskbar = 0;
 /* skip the pager for the current window */
 static unsigned int skippager = 0;
 
+/* load taskbar icon: 0 disables this feature */
+/* fixes startup with desktop managers without taskbar eg. i3 */
+static unsigned int taskbaricon = 0;
+
 /* set a char which can be printed with esc code \033[z */
 /* TODO: allow this to accept unicode */
 static char prompt_char = '$';

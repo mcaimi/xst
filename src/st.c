@@ -3775,7 +3775,8 @@ xinit(void)
   xresettitle();
   XMapWindow(xw.dpy, xw.win);
   xhints();
-  load_icon();
+  if (taskbaricon != 0)
+    load_icon();
   XSync(xw.dpy, False);
 }
 
@@ -4656,6 +4657,7 @@ xrdb_load(void)
     XRESOURCE_LOAD_INTEGER("bellvolume", bellvolume);
     XRESOURCE_LOAD_INTEGER("histsize", histsize);
     XRESOURCE_LOAD_INTEGER("skiptaskbar", skiptaskbar);
+    XRESOURCE_LOAD_INTEGER("taskbaricon", taskbaricon);
     XRESOURCE_LOAD_INTEGER("skippager", skippager);
 
     XRESOURCE_LOAD_FLOAT("cwscale", cwscale);

@@ -42,6 +42,9 @@ st.skiptaskbar:   0
 ! Skip the DM pager
 st.skippager:   0
 
+! load taskbar icon
+st.taskbaricon:   0
+
 ! opacity==255 means what terminal will be not transparent, 0 - fully transparent
 st.opacity:      255
 ! Defaults taken from base16-twilight colorscheme.
