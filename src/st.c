@@ -4662,6 +4662,18 @@ xrdb_load(void)
 
     XRESOURCE_LOAD_FLOAT("cwscale", cwscale);
     XRESOURCE_LOAD_FLOAT("chscale", chscale);
+    XRESOURCE_LOAD_STRING("cursorfg", colorname[258])
+      else {
+		  // this looks confusing because we are chaining off of the if
+		  // in the macro. probably we should be wrapping everything blocks
+		  // so this isn't possible...
+		  defaultcs = defaultfg;
+		}
+    XRESOURCE_LOAD_STRING("reverse-cursor", colorname[259])
+		else {
+		  // see above.
+		  defaultrcs = defaultbg;
+		}
 
     XRESOURCE_LOAD_CHAR("prompt_char", prompt_char);
 
